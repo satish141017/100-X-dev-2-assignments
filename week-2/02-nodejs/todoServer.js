@@ -45,5 +45,57 @@
   const app = express();
   
   app.use(bodyParser.json());
+  let allTodos = {};
+  let id_marker=1;
+  app.get('/todos',(req,res)=>{
+    res.send(allTodos);
+    
+  });
+  app.get('/todos/:id',(req,res)=>{
+    const id = req.params["id"];
+    if(Object.keys(allTodos).find(key=> key==id)){
+      res.send(allTodos[id]);
+
+    }else{
+      res.status(404).send("404 not found");
+    }
+
+
+  });
+  app.post('/todos',(req,res)=>{
+    
+    const bdy = req.body;
+    allTodos[id_marker] = req.body;
+    res.send({
+      id : id_marker
+    });
+    id_marker++;
+    
+
+
+  });
+  app.put('/todos/:id',(req,res)=>{
+    const id = req.params["id"];
+    if(Object.keys(allTodos).find(key=> key==id)){
+      allTodos[id]=req.body;
+      res.status(200).send("put task done");
+
+    }else{
+      res.status(404).send("404 not found");
+    }
+    
+  });
+  app.delete('/todos/:id',(req,res)=>{
+    const id = req.params["id"];
+    if(Object.keys(allTodos).find(key=> key==id)){
+      delete allTodos.id;
+      res.status(200).send("delete task done");
   
+    }else{
+      res.status(404).send("404 not found");
+    }
+    
+  });
+
+  // app.listen(3000);
   module.exports = app;
