@@ -39,63 +39,135 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  let allTodos = {};
-  let id_marker=1;
-  app.get('/todos',(req,res)=>{
-    res.send(allTodos);
-    
-  });
-  app.get('/todos/:id',(req,res)=>{
-    const id = req.params["id"];
-    if(Object.keys(allTodos).find(key=> key==id)){
-      res.send(allTodos[id]);
+const express = require('express');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const app = express();
 
-    }else{
-      res.status(404).send("404 not found");
+app.use(bodyParser.json());
+
+let id_marker = 1;
+function find(id, allTodos) {
+  for (let i = 0; i < allTodos.length; i++) {
+    if (allTodos[i].id == id) return i;
+
+  }
+  return -1;
+}
+app.get('/todos', (req, res) => {
+
+  fs.readFile('todos.json', 'utf-8', (err, data) => {
+    if (err) {
+      res.status(500);
+    }
+    res.json(JSON.parse(data));
+
+  });
+
+});
+app.get('/todos/:id', (req, res) => {
+  fs.readFile('todos.json', 'utf-8', (err, data) => {
+    if (err) {
+      res.status(500);
+    }
+    const id = parseInt(req.params.id);
+    let allTodos = JSON.parse(data);
+    // console.log(allTodos);
+    let indx = find(id, allTodos);
+
+    if (indx === -1) {
+      res.status(404).send();
+
+    } else {
+      res.json(allTodos[indx]);
     }
 
-
   });
-  app.post('/todos',(req,res)=>{
-    
-    const bdy = req.body;
-    allTodos[id_marker] = req.body;
-    res.send({
-      id : id_marker
-    });
+
+
+});
+app.post('/todos', (req, res) => {
+
+  const bdy = req.body;
+  const newTodo = {
+    id: id_marker,
+    title: bdy.title,
+
+    description: bdy.description
+
+  }
+  fs.readFile('./todos.json', 'utf-8', (err, data) => {
+    if (err) {
+      res.status(500);
+    }
+    let allTodos = JSON.parse(data);
+    allTodos.push(newTodo);
     id_marker++;
-    
+    fs.writeFile('todos.json', JSON.stringify(allTodos), (err) => {
+      if (err) throw err;
+      res.status(201).json(newTodo);
 
-
+    });
   });
-  app.put('/todos/:id',(req,res)=>{
-    const id = req.params["id"];
-    if(Object.keys(allTodos).find(key=> key==id)){
-      allTodos[id]=req.body;
-      res.status(200).send("put task done");
 
-    }else{
-      res.status(404).send("404 not found");
+});
+app.put('/todos/:id', (req, res) => {
+  fs.readFile('todos.json', 'utf-8', (err, data) => {
+    if (err) {
+      res.status(500);
     }
-    
-  });
-  app.delete('/todos/:id',(req,res)=>{
-    const id = req.params["id"];
-    if(Object.keys(allTodos).find(key=> key==id)){
-      delete allTodos.id;
-      res.status(200).send("delete task done");
-  
-    }else{
-      res.status(404).send("404 not found");
+    let allTodos = JSON.parse(data);
+    const id = parseInt(req.params.id);
+    let indx = find(id, allTodos);
+
+    let bdy = req.body;
+    if (indx !== -1) {
+
+      allTodos[indx].title = bdy.title,
+        allTodos[indx].description = bdy.description,
+
+        fs.writeFile('todos.json', JSON.stringify(allTodos), (err) => {
+          if (err) {
+            res.status(500);
+          }
+
+
+          res.json(allTodos[indx]);
+          res.status(200).send();
+        });
+
+    } else {
+      res.status(404).send();
     }
-    
   });
 
-  // app.listen(3000);
-  module.exports = app;
+});
+app.delete('/todos/:id', (req, res) => {
+  fs.readFile('todos.json', 'utf-8', (err, data) => {
+    if (err) {
+      res.status(500);
+    }
+    let allTodos = JSON.parse(data);
+    const id = parseInt(req.params.id);
+    let indx = find(id, allTodos);
+    if (indx !== -1) {
+      allTodos = allTodos.filter(function (val) {
+        return val.id != id;
+      });
+      fs.writeFile('todos.json', JSON.stringify(allTodos), (err) => {
+        if (err) throw err;
+        res.status(200).send();
+
+      });
+
+    } else {
+      res.status(404).send();
+    }
+  });
+
+});
+app.use((req, res, next) => {
+  res.status(404).send();
+})
+
+module.exports = app;
