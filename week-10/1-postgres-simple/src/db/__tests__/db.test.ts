@@ -71,7 +71,7 @@ describe('Todo Operations', () => {
       const todos = await getTodos(userId);
   
       expect(todos.length).toBeGreaterThan(0);
-      todos.forEach(todo => {
+      todos.forEach((todo: any) => {
         expect(todo).toHaveProperty('id');
         expect(todo.user_id).toEqual(userId);
       });
